@@ -35,12 +35,6 @@ async function run() {
         // blogs related apis
         const blogWideCollection = client.db('BlogWide').collection('blogs')
 
-        // app.get('/blogs', async (req, res) => {
-        //     const cursor = blogWideCollection.find()
-        //     const result = await cursor.toArray()
-        //     res.send(result)
-        // })
-
         // get/show all data in home page
         app.get('/homeBlogs', async (req, res) => {
             const cursor = blogWideCollection.find().limit(7)
