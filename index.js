@@ -37,7 +37,7 @@ async function run() {
 
         // get/show all data in home page
         app.get('/homeBlogs', async (req, res) => {
-            const cursor = blogWideCollection.find().limit(7)
+            const cursor = blogWideCollection.find().limit(6)
             const result = await cursor.toArray()
             res.send(result)
         })
@@ -70,6 +70,43 @@ async function run() {
 
             const result = await blogWideCollection.find(query).toArray();
             res.send(result);
+        });
+
+        // use Add Collection 
+        const userWishList = client.db('BlogWide').collection('addWishList')
+
+        // collect add to card to my collection list in data server
+        app.post('/wishList', async (req, res) => {
+            const item = req.body;
+            if (!item.userEmail) {
+                return res.status(400).send({ message: "User email is required" });
+            }
+        
+            // Check by user and originalId
+            const exists = await userWishList.findOne({ userEmail: item.userEmail, originalId: item.originalId });
+            if (exists) {
+                return res.status(400).send({ message: "Already Added" });
+            }
+        
+            delete item._id; // remove _id if exists
+            const result = await userWishList.insertOne(item);
+            res.send(result);
+        });        
+        
+        // data get form database.and show the data in my Wish list
+        app.get('/wishList', async (req, res) => {
+            const userEmail = req.query.email;
+            if (!userEmail) {
+                return res.status(400).send({ message: "User email is required" });
+            }
+            const items = await userWishList.find({ userEmail }).toArray();
+            // id convert to string
+            const formattedItems = items.map(item => ({
+                ...item,
+                _id: item._id.toString()
+            }));
+
+            res.send(formattedItems);
         });
 
     } finally {
