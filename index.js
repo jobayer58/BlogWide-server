@@ -81,18 +81,18 @@ async function run() {
             if (!item.userEmail) {
                 return res.status(400).send({ message: "User email is required" });
             }
-        
+
             // Check by user and originalId
             const exists = await userWishList.findOne({ userEmail: item.userEmail, originalId: item.originalId });
             if (exists) {
-                return res.status(400).send({ message: "Already Added" });
+                return res.status(400).send({ message: "This Item All Ready added your wish list" });
             }
-        
+
             delete item._id; // remove _id if exists
             const result = await userWishList.insertOne(item);
             res.send(result);
-        });        
-        
+        });
+
         // data get form database.and show the data in my Wish list
         app.get('/wishList', async (req, res) => {
             const userEmail = req.query.email;
@@ -108,6 +108,14 @@ async function run() {
 
             res.send(formattedItems);
         });
+
+        // add item Delete Function
+        app.delete('/wishList/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await userWishList.deleteOne(query)
+            res.send(result)
+        })
 
     } finally {
         // Ensures that the client will close when you finish/error
