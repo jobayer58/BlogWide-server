@@ -72,6 +72,13 @@ async function run() {
             res.send(result);
         });
 
+        // add blogs post
+        app.post('/blogs', async (req,res) => {
+            const addBlogs = req.body
+            const result = await blogWideCollection.insertOne(addBlogs)
+            res.send(result)
+        })
+
         // use Add Collection 
         const userWishList = client.db('BlogWide').collection('addWishList')
 
