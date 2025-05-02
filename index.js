@@ -117,6 +117,23 @@ async function run() {
             res.send(result)
         })
 
+        // get top 10 blog from server 
+        app.get('/topBlogs', async (req, res) => {
+            const blogs = await blogWideCollection.find().toArray();
+        
+            // Add word count to each blog based on shortDescription or content
+            const blogsWithCount = blogs.map(blog => {
+                const wordCount = blog.description?.split(/\s+/).length || 0;
+                return { ...blog, wordCount };
+            });
+        
+            // Sort and get top 10
+            const top10 = blogsWithCount.sort((a, b) => b.wordCount - a.wordCount).slice(0, 10);
+        
+            res.send(top10);
+        });
+        
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
