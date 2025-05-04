@@ -93,6 +93,31 @@ async function run() {
             res.send(result);
         });
         
+        // comment section database collection
+        const userComment = client.db('BlogWide').collection('commentMessage')
+
+        // add comment
+        app.post('/comment', async (req, res) => {
+            const comment = req.body;
+            const blogId = comment.blogId;
+            const commenterEmail = comment.email;
+          
+            const blog = await blogWideCollection.findOne({ _id: new ObjectId(blogId) });
+          
+            if (blog.authorEmail === commenterEmail) {
+              return res.status(403).send({ message: "You can't comment on your own blog!" });
+            }
+          
+            const result = await userComment.insertOne(comment);
+            res.send(result);
+          });
+
+        //   get comments
+        app.get('/comment/:id', async (req, res) => {
+            const blogId = req.params.id;
+            const comments = await userComment.find({ blogId: blogId }).sort({ date: -1 }).toArray();
+            res.send(comments);
+          });
 
         // use Add Collection 
         const userWishList = client.db('BlogWide').collection('addWishList')
