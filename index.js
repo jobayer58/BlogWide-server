@@ -79,6 +79,21 @@ async function run() {
             res.send(result)
         })
 
+        // update Blog item
+        app.put('/blogs/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedBlog = req.body;
+        
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: updatedBlog
+            };
+        
+            const result = await blogWideCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+        
+
         // use Add Collection 
         const userWishList = client.db('BlogWide').collection('addWishList')
 
