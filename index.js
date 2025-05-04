@@ -27,9 +27,9 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         // blogs related apis
@@ -73,7 +73,7 @@ async function run() {
         });
 
         // add blogs post
-        app.post('/blogs', async (req,res) => {
+        app.post('/blogs', async (req, res) => {
             const addBlogs = req.body
             const result = await blogWideCollection.insertOne(addBlogs)
             res.send(result)
@@ -83,16 +83,16 @@ async function run() {
         app.put('/blogs/:id', async (req, res) => {
             const id = req.params.id;
             const updatedBlog = req.body;
-        
+
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
                 $set: updatedBlog
             };
-        
+
             const result = await blogWideCollection.updateOne(filter, updateDoc);
             res.send(result);
         });
-        
+
         // comment section database collection
         const userComment = client.db('BlogWide').collection('commentMessage')
 
@@ -101,23 +101,23 @@ async function run() {
             const comment = req.body;
             const blogId = comment.blogId;
             const commenterEmail = comment.email;
-          
+
             const blog = await blogWideCollection.findOne({ _id: new ObjectId(blogId) });
-          
+
             if (blog.authorEmail === commenterEmail) {
-              return res.status(403).send({ message: "You can't comment on your own blog!" });
+                return res.status(403).send({ message: "You can't comment on your own blog!" });
             }
-          
+
             const result = await userComment.insertOne(comment);
             res.send(result);
-          });
+        });
 
         //   get comments
         app.get('/comment/:id', async (req, res) => {
             const blogId = req.params.id;
             const comments = await userComment.find({ blogId: blogId }).sort({ date: -1 }).toArray();
             res.send(comments);
-          });
+        });
 
         // use Add Collection 
         const userWishList = client.db('BlogWide').collection('addWishList')
@@ -167,19 +167,55 @@ async function run() {
         // get top 10 blog from server 
         app.get('/topBlogs', async (req, res) => {
             const blogs = await blogWideCollection.find().toArray();
-        
+
             // Add word count to each blog based on shortDescription or content
             const blogsWithCount = blogs.map(blog => {
                 const wordCount = blog.description?.split(/\s+/).length || 0;
                 return { ...blog, wordCount };
             });
-        
+
             // Sort and get top 10
             const top10 = blogsWithCount.sort((a, b) => b.wordCount - a.wordCount).slice(0, 10);
-        
+
             res.send(top10);
         });
-        
+
+        // top 3 writer update version
+        app.get('/topWriter', async (req, res) => {
+            const blogs = await blogWideCollection.find().toArray();
+
+            const writerStats = {};
+            blogs.forEach(blog => {
+                const email = blog.userEmail;
+
+                if (email) {
+                    if (!writerStats[email]) {
+                        writerStats[email] = {
+                            userEmail: blog.userEmail,
+                            author: blog.author,
+                            userImage: blog.userImage || '',
+                            postCount: 0,
+                            totalWords: 0
+                        };
+                    }
+
+                    writerStats[email].postCount += 1;
+
+                    const wordCount = blog.description?.split(/\s+/).length || 0;
+                    writerStats[email].totalWords += wordCount;
+                }
+            });
+            const topWriters = Object.values(writerStats)
+                .sort((a, b) => {
+                    if (b.postCount === a.postCount) {
+                        return b.totalWords - a.totalWords; 
+                    }
+                    return b.postCount - a.postCount; 
+                })
+                .slice(0, 3); 
+
+            res.send(topWriters);
+        });
 
     } finally {
         // Ensures that the client will close when you finish/error
